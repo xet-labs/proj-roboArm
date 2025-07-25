@@ -1,0 +1,9 @@
+# Name,             Qty,    Description,                detail
+microcontroller,    x1,     esp32,                  
+servo motor    ,    x1,     SG90,                       for head movement
+servo metal gear,   x2,     mg995,                      for shoulder, arm
+stepper-motor  ,    x1,     jk42hs40,                   for base
+stepper-driver ,    x1,     a4988,
+dc gear motor  ,    x1,     N20 micro gear motor,       for screw attachment        
+dc mo=tor driver,   x1,     l298n,                      for controlling dc motor
+laser sensor,       x1,     vl53l0x,                    for sensing hole 
