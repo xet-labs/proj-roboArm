@@ -12,7 +12,8 @@
             "defines": [
                 "ESP32",
                 "ARDUINO=10813",
-                "ARDUINO_ARCH_ESP32"
+                "ARDUINO_ARCH_ESP32",
+                    "CONFIG_FREERTOS_UNICORE=1"
             ],
             "compilerPath": "/home/xet/.arduino15/packages/esp32/tools/esp-x32/2411/bin/xtensa-esp32-elf-g++",
             "cStandard": "c11",

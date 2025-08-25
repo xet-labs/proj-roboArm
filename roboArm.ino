@@ -32,6 +32,12 @@ void setup()
       ; // Halt if sensor fails
   }
 #endif
+
+  tone(sys::hw.BUZZER, 1000, 150); // 1 kHz for 150ms
+  delay(200);
+  tone(sys::hw.BUZZER, 1500, 150); // 1.5 kHz for 150ms
+  delay(200);
+  noTone(sys::hw.BUZZER);           // stop
 }
 
 void loop()
