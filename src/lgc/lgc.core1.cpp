@@ -115,6 +115,20 @@ namespace lgc
             stepper.run();
         }
     }
+    void stats(const Joypad &jp)
+    {
+        const char *dcState;
+        if (jp.btns & BTN_RB)
+            dcState = "CW";
+        else if (jp.btns & BTN_LB)
+            dcState = "CCW";
+        else
+            dcState = "STOP";
+
+        Serial.printf("[JOY] Soldr: %d, Elbow: %d, Wrist: %d | Stepper: %d | DC: %s | servoStep: %d\n",
+                      servo0Pos, servo1Pos, servo2Pos,
+                      stepper0Pos, dcState, servoStep);
+    }
 
     void coreAction(const Joypad &jp)
     {
@@ -161,12 +175,8 @@ namespace lgc
         // if (millis() - lastPrint > 1000)
         // {
         // lastPrint = millis();
-        Serial.printf("[JOY] soldr: %d, Elbow: %d, Head: %d | Stepper: %d | servoStep: %d\n",
-                      servo0Pos, servo1Pos, servo2Pos, stepper0Pos,
-                      (jp.btns & BTN_RB) ? "CW" : (jp.btns & BTN_LB) ? "CCW"
-                                                                     : "STOP",
-                      servoStep);
         // }
+        stats(jp);
     }
 
     void coreActionAsync(const Joypad &jp)
@@ -174,41 +184,65 @@ namespace lgc
         // Stepper movement
 
         if (dpadLeft)
+        {
             stepperBackward(stepper[0], stepper0Pos, stepperStep, 14);
+            stats(jp);
+        }
         if (dpadRight)
+        {
             stepperForward(stepper[0], stepper0Pos, stepperStep, 14);
-
+            stats(jp);
+        }
         // soldr control (A + UP/DOWN)
         if (jp.btns & BTN_A)
         {
             if (dpadUp)
+            {
                 servoForward(servo[0], servo0Pos, servoStep, 18);
-            // servo0Pos = std::min(280, servo0Pos + servoStep);
+                stats(jp);
+
+                // servo0Pos = std::min(280, servo0Pos + servoStep);
+            }
             if (dpadDown)
+            {
                 servoBackward(servo[0], servo0Pos, servoStep, 18);
-            // servo0Pos = std::max(20, servo0Pos - servoStep);
+                // servo0Pos = std::max(20, servo0Pos - servoStep);
+                stats(jp);
+            }
         }
 
         // Elbow control (B + UP/DOWN)
         if (jp.btns & BTN_B)
         {
             if (dpadUp)
+            {
                 servoBackward(servo[1], servo1Pos, servoStep, 18);
+                stats(jp);
+            }
             // servo1Pos = std::max(0, servo1Pos - servoStep);
             if (dpadDown)
+            {
                 servoForward(servo[1], servo1Pos, servoStep, 18);
-            // servo1Pos = std::min(180, servo1Pos + servoStep);
+                stats(jp);
+                // servo1Pos = std::min(180, servo1Pos + servoStep);
+            }
         }
 
         // Head control (X + UP/DOWN)
         if (jp.btns & BTN_X)
         {
             if (dpadUp)
+            {
                 // servo2Pos = std::min(180, servo2Pos + servoStep);
                 servoForward(servo[2], servo2Pos, servoStep, 18);
+                stats(jp);
+            }
             if (dpadDown)
+            {
                 servoBackward(servo[2], servo2Pos, servoStep, 18);
-            // servo2Pos = std::max(0, servo2Pos - servoStep);
+                // servo2Pos = std::max(0, servo2Pos - servoStep);
+                stats(jp);
+            }
         }
     }
 
@@ -234,9 +268,10 @@ namespace lgc
             net::udp::socket.udp.read(rawBuf, sizeof(rawBuf));
             cntr = *reinterpret_cast<Joypad *>(rawBuf);
 
+            // show received bytes
             printRawBytes(rawBuf, sizeof(rawBuf));
 
-            // actual logic
+            // Controller logic
             coreAction(cntr);
 
             digitalWrite(sys::hw.LED, HIGH);
@@ -253,6 +288,7 @@ namespace lgc
                 digitalWrite(sys::hw.LED, LOW);
             }
         }
+        // Async Controller logic
         coreActionAsync(cntr);
     }
 }

@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/xet/.arduino15/packages/esp32/hardware/esp32/3.3.0/cores/esp32",
+                "/home/xet/.arduino15/packages/esp32/hardware/esp32/3.3.0/variants/esp32",
+                "/home/xet/.arduino15/packages/esp32/hardware/esp32/3.3.0/libraries/**",
+                "/home/xet/Arduino/libraries/**"
+            ],
+            "defines": [
+                "ESP32",
+                "ARDUINO=10813",
+                "ARDUINO_ARCH_ESP32"
+            ],
+            "compilerPath": "/home/xet/.arduino15/packages/esp32/tools/esp-x32/2411/bin/xtensa-esp32-elf-g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
