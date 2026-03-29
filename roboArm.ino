@@ -16,12 +16,12 @@ void setup()
   init_all_motors();  Serial.println();
 
   // WiFi.mode(WIFI_MODE_APSTA);
-  WiFi.mode(WIFI_STA);
+  // WiFi.mode(WIFI_STA);
 
   // net::ap::init();    Serial.println();
-  net::sta::init();   Serial.println();
+  // net::sta::init();   Serial.println();
   // net::tcp::init();
-  net::udp::init();
+  // net::udp::init();
 
 #if ENABLE_VL53L0X
   // Initialize default I2c bus
@@ -45,7 +45,7 @@ void setup()
 void loop()
 {
   lgc::core.call();
-  if (Serial.peek() != 0xAA) {
-    handle::serial();
-  }
+  // if (Serial.peek() != 0xAA) {
+  //   handle::serial();
+  // }
 }

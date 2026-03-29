@@ -3,7 +3,8 @@
 void conf_pins()
 {
     // net
-    net::sta::addConnections(1, (const char *[][2]){{"goochi-ku", "00101101"}});
+    // net::sta::addConnections(1, (const char *[][2]){{"goochi-ku", "00101101"}});
+    net::sta::addConnections(2, (const char *[][2]){{"Airtel_rohi_7608", "Air@18033"}, {"goochi-ku", "00101001"}});
 
     // Pins
     pinMode(sys::hw.BUZZER, OUTPUT);

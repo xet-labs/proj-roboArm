@@ -1,0 +1,18 @@
+[Unit]
+Description=Robot Arm PS3 Controller UART Interface
+After=network.target local-fs.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /root/@project/ps3.uart.ctrl.py
+Restart=always
+RestartSec=3
+
+# Output logs to standard systemd journal
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=roboarm-ctrl
+
+[Install]
+WantedBy=multi-user.target

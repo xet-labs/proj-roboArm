@@ -125,8 +125,8 @@ def print_state(state, raw_packet=None, raw_event=None):
 # -------- Main Loop --------
 for event in controller.read_loop():
     # Skip EV_SYN events to prevent duplicate output.
-    # if event.type == ecodes.EV_SYN:
-    #     continue
+    if event.type == ecodes.EV_SYN:
+        continue
 
     raw_event = event  # Store raw event for logging
     if event.type == ecodes.EV_KEY:
