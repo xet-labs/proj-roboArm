@@ -15,8 +15,10 @@ void setup()
   conf_pins();        Serial.println();
   init_all_motors();  Serial.println();
 
-  WiFi.mode(WIFI_MODE_APSTA);
-  net::ap::init();    Serial.println();
+  // WiFi.mode(WIFI_MODE_APSTA);
+  WiFi.mode(WIFI_STA);
+
+  // net::ap::init();    Serial.println();
   net::sta::init();   Serial.println();
   // net::tcp::init();
   net::udp::init();
@@ -42,6 +44,8 @@ void setup()
 
 void loop()
 {
-  handle::serial();
   lgc::core.call();
+  if (Serial.peek() != 0xAA) {
+    handle::serial();
+  }
 }

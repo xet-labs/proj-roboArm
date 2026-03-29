@@ -5,41 +5,12 @@
 
 namespace lgc
 {
-    // Data Type
-    struct __attribute__((packed)) Joypad
-    {
-        uint16_t btns;
-        int16_t axisLX;
-        int16_t axisLY;
-        int16_t axisRX;
-        int16_t axisRY;
-        uint8_t triggerLT;
-        uint8_t triggerRT;
-    };
-
-    enum Button : uint16_t
-    {
-        BTN_A = 1 << 0,
-        BTN_B = 1 << 1,
-        BTN_X = 1 << 2,
-        BTN_Y = 1 << 3,
-        BTN_LB = 1 << 4,
-        BTN_RB = 1 << 5,
-        BTN_BACK = 1 << 6,
-        BTN_START = 1 << 7,
-        BTN_LS = 1 << 8,
-        BTN_RS = 1 << 9,
-        DPAD_UP = 1 << 10,
-        DPAD_DOWN = 1 << 11,
-        DPAD_LEFT = 1 << 12,
-        DPAD_RIGHT = 1 << 13
-    };
+    namespace Ps3Btn = controller::Ps3::Button;
+    // Using Joypad state and buttons from utils.h (libXetArduino)
 
     const int moveInterval = 15;
 
-    // --CoreAction--
-    // static Joypad lastInput = {};
-    static unsigned long lastPrint = 0;
+    // --runtime var--
 
     // === Default Speeds ===
     constexpr int servoStepMin = 1;
@@ -60,6 +31,24 @@ namespace lgc
     // int stepper0Pos = stepper[0].currentPosition();
     int stepper0Pos = 0;
     bool dpadUp, dpadDown, dpadLeft, dpadRight;
+
+    void stats(const controller::Ps3::State &Ps3)
+    {
+        // constant stats display may cause jittery movements, so during prod
+        // return;
+        
+        const char *dcState;
+        if (Ps3.btns & Ps3Btn::RB)
+            dcState = "CW";
+        else if (Ps3.btns & Ps3Btn::LB)
+            dcState = "CCW";
+        else
+            dcState = "STOP";
+
+        Serial.printf("[JOY] Soldr: %d, Elbow: %d, Wrist: %d | Stepper: %d | DC: %s | servoStep: %d\n",
+                      servo0Pos, servo1Pos, servo2Pos,
+                      stepper0Pos, dcState, servoStep);
+    }
 
     void servoForward(Servo &servo, int &currentPos, int step = 1, int delayMs = 15, int rangeMax = 180, int rangeMin = 0)
     {
@@ -115,54 +104,40 @@ namespace lgc
             stepper.run();
         }
     }
-    void stats(const Joypad &jp)
-    {
-        const char *dcState;
-        if (jp.btns & BTN_RB)
-            dcState = "CW";
-        else if (jp.btns & BTN_LB)
-            dcState = "CCW";
-        else
-            dcState = "STOP";
 
-        Serial.printf("[JOY] Soldr: %d, Elbow: %d, Wrist: %d | Stepper: %d | DC: %s | servoStep: %d\n",
-                      servo0Pos, servo1Pos, servo2Pos,
-                      stepper0Pos, dcState, servoStep);
-    }
-
-    void coreAction(const Joypad &jp)
+    void coreAct(const controller::Ps3::State &Ps3)
     {
         // Servos speed
-        servoStep = jp.triggerRT > 0 ? map(jp.triggerRT, 0, 255, servoStepMin, servoStepMax) : servoStepDef;
+        servoStep = Ps3.triggerRT > 0 ? map(Ps3.triggerRT, 0, 255, servoStepMin, servoStepMax) : servoStepDef;
         // Dc Motor Speed
-        motor[0].setSpeed(jp.triggerLT > 0 ? jp.triggerLT : dcSpeedDef);
+        motor[0].setSpeed(Ps3.triggerLT > 0 ? Ps3.triggerLT : dcSpeedDef);
 
         stepper[0].setMaxSpeed(500);
         stepper[0].setAcceleration(200);
 
         // === DPAD Controls ===
-        dpadUp = jp.btns & DPAD_UP;
-        dpadDown = jp.btns & DPAD_DOWN;
-        dpadLeft = jp.btns & DPAD_LEFT;
-        dpadRight = jp.btns & DPAD_RIGHT;
+        dpadUp = Ps3.btns & Ps3Btn::DPAD_UP;
+        dpadDown = Ps3.btns & Ps3Btn::DPAD_DOWN;
+        dpadLeft = Ps3.btns & Ps3Btn::DPAD_LEFT;
+        dpadRight = Ps3.btns & Ps3Btn::DPAD_RIGHT;
 
         // === Stepper Movement (Still using axisLX) ===
-        // int stepTarget = map(jp.axisLX, -32768, 32767, -200, 200);
+        // int stepTarget = map(Ps3.axisLX, -32768, 32767, -200, 200);
         // stepper[0].moveTo(stepTarget);
         // stepper[0].run();
 
         // === DC Motor Control (RB = CW, LB = CCW) ===
-        switch (jp.btns & (BTN_RB | BTN_LB))
+        switch (Ps3.btns & (Ps3Btn::RB | Ps3Btn::LB))
         {
-        case BTN_RB:
+        case Ps3Btn::RB:
             motor[0].forward();
             break;
 
-        case BTN_LB:
+        case Ps3Btn::LB:
             motor[0].backward();
             break;
 
-        case (BTN_RB | BTN_LB): // both pressed
+        case (Ps3Btn::RB | Ps3Btn::LB): // both pressed
             motor[0].stop();    // or do something else
             break;
 
@@ -171,124 +146,95 @@ namespace lgc
             break;
         }
 
-        // === Optional: Debug Info Every Second ===
-        // if (millis() - lastPrint > 1000)
-        // {
-        // lastPrint = millis();
-        // }
-        stats(jp);
+        stats(Ps3);
     }
 
-    void coreActionAsync(const Joypad &jp)
+    void coreActAsync(const controller::Ps3::State &Ps3)
     {
         // Stepper movement
 
         if (dpadLeft)
         {
             stepperBackward(stepper[0], stepper0Pos, stepperStep, 14);
-            stats(jp);
+            stats(Ps3);
         }
         if (dpadRight)
         {
             stepperForward(stepper[0], stepper0Pos, stepperStep, 14);
-            stats(jp);
+            stats(Ps3);
         }
         // soldr control (A + UP/DOWN)
-        if (jp.btns & BTN_A)
+        if (Ps3.btns & Ps3Btn::A)
         {
             if (dpadUp)
             {
                 servoForward(servo[0], servo0Pos, servoStep, 18);
-                stats(jp);
+                stats(Ps3);
 
-                // servo0Pos = std::min(280, servo0Pos + servoStep);
             }
             if (dpadDown)
             {
                 servoBackward(servo[0], servo0Pos, servoStep, 18);
-                // servo0Pos = std::max(20, servo0Pos - servoStep);
-                stats(jp);
+                stats(Ps3);
             }
         }
 
         // Elbow control (B + UP/DOWN)
-        if (jp.btns & BTN_B)
+        if (Ps3.btns & Ps3Btn::B)
         {
             if (dpadUp)
             {
                 servoBackward(servo[1], servo1Pos, servoStep, 18);
-                stats(jp);
+                stats(Ps3);
             }
-            // servo1Pos = std::max(0, servo1Pos - servoStep);
             if (dpadDown)
             {
                 servoForward(servo[1], servo1Pos, servoStep, 18);
-                stats(jp);
-                // servo1Pos = std::min(180, servo1Pos + servoStep);
+                stats(Ps3);
             }
         }
 
         // Head control (X + UP/DOWN)
-        if (jp.btns & BTN_X)
+        if (Ps3.btns & Ps3Btn::X)
         {
             if (dpadUp)
             {
-                // servo2Pos = std::min(180, servo2Pos + servoStep);
                 servoForward(servo[2], servo2Pos, servoStep, 18);
-                stats(jp);
+                stats(Ps3);
             }
             if (dpadDown)
             {
                 servoBackward(servo[2], servo2Pos, servoStep, 18);
-                // servo2Pos = std::max(0, servo2Pos - servoStep);
-                stats(jp);
+                stats(Ps3);
             }
         }
     }
 
     // --- Core Initializer loop() ---
-    void printRawBytes(const uint8_t *data, size_t len)
-    {
-        Serial.print("   Rx: ");
-        for (size_t i = 0; i < len; ++i)
-            Serial.printf("%02x", data[i]);
-        Serial.println();
-    }
     void core1()
     {
-        static Joypad cntr = {};
-        static uint8_t rawBuf[sizeof(Joypad)];
+        static controller::Ps3::State cntr = {};
+        static uint8_t rawBuf[sizeof(cntr)];
         static unsigned long lastPacketTime = 0;
-        static unsigned long lastLedTime = 0;
         int len = net::udp::socket.udp.parsePacket();
 
-        // Serial.print("[core1]");
-        if (len >= sizeof(Joypad))
+        if (len >= sizeof(controller::Ps3::State))
         {
             net::udp::socket.udp.read(rawBuf, sizeof(rawBuf));
-            cntr = *reinterpret_cast<Joypad *>(rawBuf);
+            cntr = *reinterpret_cast<controller::Ps3::State*>(rawBuf);
 
             // show received bytes
-            printRawBytes(rawBuf, sizeof(rawBuf));
+            // util::printBytes(rawBuf, sizeof(rawBuf));
+            // controller::Ps3::printState(cntr, rawBuf, sizeof(rawBuf));
 
-            // Controller logic
-            coreAction(cntr);
+            // controller logic
+            coreAct(cntr);
 
-            digitalWrite(sys::hw.LED, HIGH);
+            if (!sys::hw.LED_LOCK) digitalWrite(sys::hw.LED, 1);
         }
-        else
-        {
-            if (millis() - lastLedTime > 200)
-            {
-                lastLedTime = millis();
-                digitalWrite(sys::hw.LED, HIGH);
-            }
-            else
-            {
-                digitalWrite(sys::hw.LED, LOW);
-            }
-        }
-        // Async Controller logic
-        coreActionAsync(cntr);
+        else if (!sys::hw.LED_LOCK) digitalWrite(sys::hw.LED, 0);
+
+        // asynchronous controller logic
+        coreActAsync(cntr);
     }
 }
